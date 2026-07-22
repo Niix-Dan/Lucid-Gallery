@@ -1,0 +1,39 @@
+{
+  "key.categories.lucidgallery.main": "Lucid Gallery",
+  "key.lucidgallery.open": "Open Screenshots Gallery",
+
+  "gui.lucidgallery.title": "Lucid Gallery",
+  "gui.lucidgallery.gallery_button": "Screenshots",
+
+  "gui.lucidgallery.open_folder_button": "Open Folder",
+  "gui.lucidgallery.refresh_button": "Refresh",
+  "gui.lucidgallery.close_button": "Close",
+
+  "gui.lucidgallery.open_button": "\uD83D\uDCF0",
+  "gui.lucidgallery.delete_button": "\uD83D\uDDD1",
+
+  "gui.lucidgallery.modal.view_button": "Open Image",
+  "gui.lucidgallery.modal.delete_button": "Delete",
+  "gui.lucidgallery.modal.close_button": "Close",
+  "gui.lucidgallery.modal.info": "Date: %s   |   Size: %s   |   Res: %s",
+  "gui.lucidgallery.modal.info.date_format": "yyyy-MM-dd HH:mm",
+  "gui.lucidgallery.modal.info.size_format": "%s KB",
+  "gui.lucidgallery.modal.info.res_format": "%sx%s",
+
+  "gui.lucidgallery.scale_auto": "Auto",
+  "gui.lucidgallery.scale_label": "Scale: %s",
+
+  "gui.lucidgallery.action.delete_success": "Screenshot deleted!",
+  "gui.lucidgallery.action.delete_fail": "Failed to delete screenshot!",
+
+  "gui.lucidgallery.upload.button.upload": "Upload",
+  "gui.lucidgallery.upload.button.uploading": "Uploading...",
+  "gui.lucidgallery.upload.button.copy_link": "Copy Link",
+  "gui.lucidgallery.upload.button.retry": "Retry Upload",
+  "gui.lucidgallery.upload.button.cooldown": "Wait!",
+  "gui.lucidgallery.upload.status.success": "Uploaded!",
+  "gui.lucidgallery.upload.status.fail": "Upload failed",
+  "gui.lucidgallery.upload.status.copied": "Link copied!",
+  "gui.lucidgallery.upload.status.cooldown": "Wait before uploading again",
+  "gui.lucidgallery.upload.status.busy": "Already uploading"
+}
