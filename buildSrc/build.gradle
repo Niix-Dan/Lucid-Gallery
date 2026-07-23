@@ -1,3 +1,13 @@
 plugins {
     id 'groovy-gradle-plugin'
 }
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'me.modmuss50.mod-publish-plugin:me.modmuss50.mod-publish-plugin.gradle.plugin:1.1.0'
+    implementation 'dev.ithundxr.silk:dev.ithundxr.silk.gradle.plugin:1.0.1'
+}
