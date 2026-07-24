@@ -48,9 +48,32 @@ tasks.named('sourcesJar', Jar) {
     from(configurations.commonResources)
 }
 
+def parseChangelog(File file, String targetVersion) {
+    if (!file.exists()) return ""
+
+    def text = file.text.replace("\r\n", "\n")
+    def sections = text.split(/(?m)^---\s*$/)
+
+    for (String section : sections) {
+        def trimmed = section.trim()
+        if (trimmed.startsWith("## v${targetVersion}") || trimmed.startsWith("## ${targetVersion}")) {
+            return trimmed.replaceFirst(/(?m)^##\s*v?[^\n]+\n?/, "").trim()
+        }
+    }
+
+    if (sections.length > 0) {
+        return sections[0].replaceFirst(/(?m)^##\s*v?[^\n]+\n?/, "").trim()
+    }
+
+    return ""
+}
+
 publishMods {
     def changelogFile = rootProject.file("CHANGELOG.md")
-    changelog = changelogFile.text
+    changelog = parseChangelog(changelogFile, project.version.toString())
+
+    type = STABLE
+    version = "${project.version}"
 
     type = STABLE
     version = "${project.version}"

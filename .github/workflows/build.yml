@@ -42,6 +42,33 @@ jobs:
       run: |
         VERSION=$(grep -E "^version[ \t]*=" gradle.properties | awk -F= '{print $2}' | tr -d ' "')
         echo "MOD_VERSION=$VERSION" >> $GITHUB_ENV
+    
+    - name: Extract Changelog for Version
+      run: |
+        python3 -c '
+        import re, os
+
+        version = os.environ.get("MOD_VERSION", "")
+        changelog_path = "CHANGELOG.md"
+
+        extracted = ""
+        if os.path.exists(changelog_path):
+            with open(changelog_path, "r", encoding="utf-8") as f:
+                text = f.read().replace("\r\n", "\n")
+            
+            sections = re.split(r"(?m)^---\s*$", text)
+            for sec in sections:
+                sec_str = sec.strip()
+                if sec_str.startswith(f"## v{version}") or sec_str.startswith(f"## {version}"):
+                    extracted = re.sub(r"^##\s*v?[^\n]+\n?", "", sec_str).strip()
+                    break
+            
+            if not extracted and sections:
+                extracted = re.sub(r"^##\s*v?[^\n]+\n?", "", sections[0].strip()).strip()
+
+        with open("RELEASE_CHANGELOG.md", "w", encoding="utf-8") as f:
+            f.write(extracted)
+        '
 
     - name: Collect and sanitize artifacts
       run: |
@@ -81,7 +108,7 @@ jobs:
       with:
         tag_name: v${{ env.MOD_VERSION }}
         name: LucidGallery v${{ env.MOD_VERSION }}
-        body_path: CHANGELOG.md
+        body_path: RELEASE_CHANGELOG.md
         files: release-artifacts/*.jar
         draft: false
         prerelease: false

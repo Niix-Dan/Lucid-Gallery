@@ -1,3 +1,8 @@
+## v1.0.2
+
+
+---
+
 ## v1.0.1
 * Added Mod Publish Plugin for automated CurseForge and GitHub releases.
 * Implemented native `CHANGELOG.md` reading through Gradle.
