@@ -60,6 +60,10 @@ publishMods {
     curseforge {
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         projectId = rootProject.properties['curseforge_id']
+
+        //TODO: (version-range & multi-loader tags for specific loaders)
+        //  minecraftVersions.add("")
+        //  loaders
         minecraftVersions.add(minecraft_version)
     }
 

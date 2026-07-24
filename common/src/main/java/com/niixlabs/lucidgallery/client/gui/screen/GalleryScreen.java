@@ -96,7 +96,7 @@ public class GalleryScreen extends Screen {
                 .bounds(previewX + 180, btnY, 80, 20).build();
 
         this.uploadButton = Button.builder(Component.translatable("gui.lucidgallery.upload.button.upload"), b -> handleUploadButtonClick())
-                .bounds(previewX, uploadRowY, 160, 20).build();
+                .bounds(previewX + 270, btnY, 80, 20).build();
     }
 
     private void reloadScreenshots() {
