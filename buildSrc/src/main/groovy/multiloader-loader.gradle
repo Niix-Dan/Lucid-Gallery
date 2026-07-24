@@ -54,23 +54,48 @@ publishMods {
 
     type = STABLE
     version = "${project.version}"
-    displayName = "${mod_name} ${project.version} v${project.name.capitalize()}"
-    modLoaders.add(project.name)
+
+    def loaderDisplayNames = [
+            'fabric': 'Fabric',
+            'neoforge': 'NeoForge',
+            'forge': 'Forge'
+    ]
+    def loaderName = loaderDisplayNames.get(project.name, project.name.capitalize())
+    displayName = "${mod_name} ${loaderName} v${project.version}"
+
+    if (project.name == 'fabric') {
+        modLoaders.addAll('fabric', 'quilt')
+    } else if (project.name == 'neoforge') {
+        modLoaders.add('neoforge')
+    } else if (project.name == 'forge') {
+        modLoaders.add('forge')
+    }
 
     curseforge {
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         projectId = rootProject.properties['curseforge_id']
 
-        //TODO: (version-range & multi-loader tags for specific loaders)
-        //  minecraftVersions.add("")
-        //  loaders
-        minecraftVersions.add(minecraft_version)
+        if (project.name == 'fabric') {
+            minecraftVersions.add("1.21.1")
+        } else if (project.name in ['neoforge', 'forge']) {
+            minecraftVersions.addAll(
+                    "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5",
+                    "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11"
+            )
+        }
     }
 
     //modrinth {
     //    accessToken = providers.environmentVariable("MODRINTH_TOKEN")
     //    projectId = rootProject.properties['modrinth_id']
-    //    minecraftVersions.add(minecraft_version)
+    //    if (project.name == 'fabric') {
+    //        minecraftVersions.add("1.21.1")
+    //    } else if (project.name in ['neoforge', 'forge']) {
+    //        minecraftVersions.addAll(
+    //            "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5",
+    //            "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11"
+    //        )
+    //    }
     //}
 
     github {
