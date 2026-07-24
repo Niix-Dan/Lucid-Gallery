@@ -80,6 +80,8 @@ publishMods {
     curseforge {
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         projectId = rootProject.properties['curseforge_id']
+        clientRequired = true
+        serverRequired = false
 
         if (project.name == 'fabric') {
             minecraftVersions.add("1.21.1")
