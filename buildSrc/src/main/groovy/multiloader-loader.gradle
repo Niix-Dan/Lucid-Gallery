@@ -55,12 +55,6 @@ publishMods {
     type = STABLE
     version = "${project.version}"
 
-    if (project.name == 'fabric') {
-        file = tasks.named('remapJar')
-    } else {
-        file = tasks.named('jar')
-    }
-
     def loaderDisplayNames = [
             'fabric': 'Fabric',
             'neoforge': 'NeoForge',
@@ -105,4 +99,14 @@ publishMods {
     //        )
     //    }
     //}
+}
+
+afterEvaluate {
+    publishMods {
+        if (tasks.names.contains('remapJar')) {
+            file = tasks.named('remapJar').flatMap { it.archiveFile }
+        } else {
+            file = tasks.named('jar').flatMap { it.archiveFile }
+        }
+    }
 }
