@@ -106,10 +106,10 @@ publishMods {
     //    }
     //}
 
-    github {
-        accessToken = providers.environmentVariable("GITHUB_TOKEN")
-        repository = rootProject.properties['github_repo']
-        commitish = providers.environmentVariable("GITHUB_SHA").orElse("")
-        tagName = "v${project.version}"
-    }
+    //github {
+    //    accessToken = providers.environmentVariable("GITHUB_TOKEN")
+    //    repository = rootProject.properties['github_repo']
+    //    commitish = providers.environmentVariable("GITHUB_SHA").orElse("")
+    //    tagName = "v${project.version}"
+    //}
 }
