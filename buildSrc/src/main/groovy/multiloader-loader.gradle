@@ -55,10 +55,10 @@ publishMods {
     type = STABLE
     version = "${project.version}"
 
-    if (tasks.findByName('remapJar')) {
-        file = tasks.named('remapJar').flatMap { it.archiveFile }
+    if (project.name == 'fabric') {
+        file = tasks.named('remapJar')
     } else {
-        file = tasks.named('jar').flatMap { it.archiveFile }
+        file = tasks.named('jar')
     }
 
     def loaderDisplayNames = [
@@ -104,12 +104,5 @@ publishMods {
     //            "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11"
     //        )
     //    }
-    //}
-
-    //github {
-    //    accessToken = providers.environmentVariable("GITHUB_TOKEN")
-    //    repository = rootProject.properties['github_repo']
-    //    commitish = providers.environmentVariable("GITHUB_SHA").orElse("")
-    //    tagName = "v${project.version}"
     //}
 }
