@@ -1,5 +1,10 @@
 ## v1.0.2
-
+* Added a brand new mod icon.
+* Migrated the image upload host to Uguu.se (replacing catbox.moe).
+* You can now copy the image URL simply by clicking the link.
+* Replaced the Scale button with a Slider.
+* Added mod short description to the mod properties.
+* Implemented asynchronous Lazy Loading for screenshots, drastically improving performance and reducing RAM/VRAM usage when scrolling.
 
 ---
 

@@ -18,16 +18,15 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public final class CatboxUploader {
-    private static final String UPLOAD_URL = "https://litterbox.catbox.moe/resources/internals/api.php";
+public final class LucidUploader {
+    private static final String UPLOAD_URL = "https://uguu.se/upload.php";
     private static final String USER_AGENT = "niix-dan/Lucid-Gallery";
     private static final int MAX_REQUEST_RETRIES = 2;
     private static final long RETRY_DELAY_MS = 500;
     private static final int REQUEST_TIMEOUT_MS = 10000;
-
-    private static final String FILE_LIFETIME = "24h";
-    private static final String FILE_NAME_LENGTH = "6";
 
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
@@ -91,14 +90,6 @@ public final class CatboxUploader {
 
     private static String doUpload(File file) {
         try {
-            long lastSize = -1;
-            for (int i = 0; i < 20; i++) {
-                long currentSize = file.length();
-                if (currentSize > 0 && currentSize == lastSize) break;
-                lastSize = currentSize;
-                Thread.sleep(150);
-            }
-
             byte[] imageBytes = Files.readAllBytes(file.toPath());
             String boundary = "LucidBoundary" + UUID.randomUUID().toString().replace("-", "");
             byte[] body = buildMultipartBody(boundary, file.getName(), imageBytes);
@@ -124,21 +115,26 @@ public final class CatboxUploader {
                         }
                     }
 
-                    if (status / 100 != 2 || !responseBody.startsWith("https://litter.catbox.moe/")) {
+                    if (status / 100 != 2) {
                         throw new RuntimeException("HTTP " + status + " - " + (responseBody.isEmpty() ? "No Body" : responseBody));
                     }
 
-                    return responseBody;
+                    Matcher matcher = Pattern.compile("\"url\"\\s*:\\s*\"([^\"]+)\"").matcher(responseBody);
+                    if (matcher.find()) {
+                        return matcher.group(1).replace("\\/", "/");
+                    } else {
+                        throw new RuntimeException("Failed to parse Uguu.se response.");
+                    }
 
                 } catch (HttpTimeoutException | java.net.ConnectException e) {
                     if (attempt < MAX_REQUEST_RETRIES) {
                         Thread.sleep((long) (RETRY_DELAY_MS * Math.pow(2, attempt)));
                         continue;
                     }
-                    throw new RuntimeException("Falha na conexão com Litterbox após " + (MAX_REQUEST_RETRIES + 1) + " tentativas.", e);
+                    throw new RuntimeException("Connection to Uguu.se failed after " + (MAX_REQUEST_RETRIES + 1) + " attempts.", e);
                 }
             }
-            throw new RuntimeException("Upload falhou após atingir limite de tentativas.");
+            throw new RuntimeException("Upload failed after reaching maximum retries.");
         } catch (Exception e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             throw new RuntimeException(e.getMessage(), e);
@@ -151,19 +147,8 @@ public final class CatboxUploader {
         String twoHyphens = "--";
 
         out.write((twoHyphens + boundary + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write(("Content-Disposition: form-data; name=\"reqtype\"" + crlf + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write(("fileupload" + crlf).getBytes(StandardCharsets.UTF_8));
 
-        out.write((twoHyphens + boundary + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write(("Content-Disposition: form-data; name=\"time\"" + crlf + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write((FILE_LIFETIME + crlf).getBytes(StandardCharsets.UTF_8));
-
-        out.write((twoHyphens + boundary + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write(("Content-Disposition: form-data; name=\"fileNameLength\"" + crlf + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write((FILE_NAME_LENGTH + crlf).getBytes(StandardCharsets.UTF_8));
-
-        out.write((twoHyphens + boundary + crlf).getBytes(StandardCharsets.UTF_8));
-        out.write(("Content-Disposition: form-data; name=\"fileToUpload\"; filename=\"" + fileName + "\"" + crlf).getBytes(StandardCharsets.UTF_8));
+        out.write(("Content-Disposition: form-data; name=\"files[]\"; filename=\"" + fileName + "\"" + crlf).getBytes(StandardCharsets.UTF_8));
         out.write(("Content-Type: image/png" + crlf + crlf).getBytes(StandardCharsets.UTF_8));
 
         out.write(imageBytes);

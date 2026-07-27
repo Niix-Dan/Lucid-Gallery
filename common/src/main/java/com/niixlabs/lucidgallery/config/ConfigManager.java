@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class ConfigManager {
-    private static final String FILE_NAME = "config/lucidgallery.properties";
+    private static final String FILE_NAME = "config/lucid-gallery/lucidgallery.properties";
     private static final String HEADER = "# Lucid Gallery Configuration File\n# Colors use ARGB Hexadecimal format (e.g., 0xAARRGGBB)\n\n";
 
     private static long lastKnownModified = 0;
