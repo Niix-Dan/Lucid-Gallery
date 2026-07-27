@@ -5,6 +5,7 @@
   "gui.lucidgallery.title": "Lucid Gallery",
   "gui.lucidgallery.gallery_button": "Screenshots",
 
+  "gui.lucidgallery.loading": "Loading...",
   "gui.lucidgallery.open_folder_button": "Open Folder",
   "gui.lucidgallery.refresh_button": "Refresh",
   "gui.lucidgallery.close_button": "Close",

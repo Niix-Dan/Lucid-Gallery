@@ -1,6 +1,6 @@
 package com.niixlabs.lucidgallery.client.gui.card;
 
-import com.niixlabs.lucidgallery.client.gui.util.CatboxUploader;
+import com.niixlabs.lucidgallery.client.gui.util.LucidUploader;
 import com.niixlabs.lucidgallery.client.gui.util.TextureLoader;
 import com.niixlabs.lucidgallery.config.LucidConfig;
 import net.minecraft.Util;
@@ -46,7 +46,7 @@ public class ScreenshotCard {
         this.refreshCallback = refreshCallback;
         this.selectCallback = selectCallback;
 
-        String cachedUrl = CatboxUploader.getCachedUrl(file);
+        String cachedUrl = LucidUploader.getCachedUrl(file);
         if (cachedUrl != null) {
             this.uploadUrl = cachedUrl;
             this.uploadState = UploadState.UPLOADED;
@@ -97,6 +97,7 @@ public class ScreenshotCard {
             guiGraphics.blit(textureLocation, x, y, 0, 0, width, height - 14, width, height - 14);
         } else {
             guiGraphics.fill(x, y, x + width, y + height - 14, 0xFF333333);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("gui.lucidgallery.loading").getString(), x + (width / 2), y + ((height - 14) / 2) - 4, 0xFFAAAAAA);
         }
 
         String name = file.getName();
@@ -119,8 +120,14 @@ public class ScreenshotCard {
         }
     }
 
+    // MUDANÇA PRINCIPAL AQUI
     public void unloadTexture() {
-        this.textureLocation = null;
+        // Verifica se realmente tem uma textura antes de tentar deletar
+        // Isso evita ficar chamando a limpeza do TextureLoader 60x por segundo à toa
+        if (this.textureLocation != null) {
+            TextureLoader.unloadTexture(this.file);
+            this.textureLocation = null;
+        }
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {
@@ -209,21 +216,21 @@ public class ScreenshotCard {
             return;
         }
 
-        String cached = CatboxUploader.getCachedUrl(file);
+        String cached = LucidUploader.getCachedUrl(file);
         if (cached != null) {
             this.uploadUrl = cached;
             this.uploadState = UploadState.UPLOADED;
             return;
         }
 
-        CatboxUploader.RejectReason reason = CatboxUploader.canUpload();
-        if (reason != CatboxUploader.RejectReason.NONE) {
+        LucidUploader.RejectReason reason = LucidUploader.canUpload();
+        if (reason != LucidUploader.RejectReason.NONE) {
             statusCallback.accept(rejectMessage(reason));
             return;
         }
 
         this.uploadState = UploadState.UPLOADING;
-        CatboxUploader.uploadAsync(file, (url, error) -> {
+        LucidUploader.uploadAsync(file, (url, error) -> {
             if (error != null) {
                 this.uploadState = UploadState.ERROR;
                 this.uploadError = error;
@@ -242,7 +249,7 @@ public class ScreenshotCard {
         statusCallback.accept(Component.translatable("gui.lucidgallery.upload.status.copied").getString());
     }
 
-    private String rejectMessage(CatboxUploader.RejectReason reason) {
+    private String rejectMessage(LucidUploader.RejectReason reason) {
         return switch (reason) {
             case COOLDOWN -> Component.translatable("gui.lucidgallery.upload.status.cooldown").getString();
             case BUSY -> Component.translatable("gui.lucidgallery.upload.status.busy").getString();

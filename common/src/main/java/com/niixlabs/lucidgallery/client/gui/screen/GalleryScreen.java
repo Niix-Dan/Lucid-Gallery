@@ -2,7 +2,7 @@ package com.niixlabs.lucidgallery.client.gui.screen;
 
 import com.niixlabs.lucidgallery.client.gui.card.ScreenshotCard;
 import com.niixlabs.lucidgallery.client.gui.util.GuiScale;
-import com.niixlabs.lucidgallery.client.gui.util.CatboxUploader;
+import com.niixlabs.lucidgallery.client.gui.util.LucidUploader;
 import com.niixlabs.lucidgallery.client.gui.util.TextureLoader;
 import com.niixlabs.lucidgallery.client.gui.util.LucidScrollHandler;
 import com.niixlabs.lucidgallery.config.ConfigManager;
@@ -10,10 +10,12 @@ import com.niixlabs.lucidgallery.config.LucidConfig;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -28,11 +30,6 @@ public class GalleryScreen extends Screen {
     private ScreenshotCard selectedCard = null;
     private String statusMessage = "";
     private long statusTimer = 0;
-    private boolean isDropdownOpen = false;
-    private final int dropdownWidth = 60;
-    private final int dropdownHeight = 16;
-    private int dropdownX;
-    private int dropdownY;
 
     private Button viewButton;
     private Button deleteButton;
@@ -60,12 +57,14 @@ public class GalleryScreen extends Screen {
             File screenshotsDir = new File(Minecraft.getInstance().gameDirectory, "screenshots");
             Util.getPlatform().openFile(screenshotsDir);
         }).bounds(centerX - 155, 10, 100, 20).build());
+
         this.addRenderableWidget(Button.builder(Component.translatable("gui.lucidgallery.refresh_button"), b -> reloadScreenshots())
                 .bounds(centerX - 50, 10, 100, 20).build());
+
         this.addRenderableWidget(Button.builder(Component.translatable("gui.lucidgallery.close_button"), b -> this.onClose())
                 .bounds(centerX + 55, 10, 100, 20).build());
-        this.dropdownX = this.width - dropdownWidth - 10;
-        this.dropdownY = 10;
+
+        this.addRenderableWidget(new ScaleSlider(this.width - 110, 10, 100, 20));
 
         this.previewWidth = (int) (this.width * 0.7);
         this.previewHeight = (int) (this.height * 0.7);
@@ -141,7 +140,7 @@ public class GalleryScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (isDropdownOpen || selectedCard != null) return true;
+        if (selectedCard != null) return true;
         if (scrollHandler.handleMouseScrolled(scrollY, 25.0)) {
             recalculateLayout();
             return true;
@@ -159,34 +158,29 @@ public class GalleryScreen extends Screen {
         if (selectedCard != null) {
             if (viewButton.mouseClicked(scaledX, scaledY, button)) return true;
             if (deleteButton.mouseClicked(scaledX, scaledY, button)) return true;
-            if (LucidConfig.screenshotUploadEnabled && uploadButton.mouseClicked(scaledX, scaledY, button)) return true;
-            if (closeButton.mouseClicked(scaledX, scaledY, button)) return true;
-            if (scaledX < previewX || scaledX > previewX + previewWidth || scaledY < previewY || scaledY > previewY + previewHeight) {
-                selectedCard = null;
-            }
-            return true;
-        }
 
-        if (scaledX >= dropdownX && scaledX <= dropdownX + dropdownWidth) {
-            if (scaledY >= dropdownY && scaledY <= dropdownY + dropdownHeight) {
-                isDropdownOpen = !isDropdownOpen;
-                return true;
-            }
-            if (isDropdownOpen) {
-                List<Integer> options = GuiScale.supportedScaleOptions(this.minecraft);
-                for (int i = 0; i < options.size(); i++) {
-                    int optY = dropdownY + dropdownHeight + (i * dropdownHeight);
-                    if (scaledY >= optY && scaledY <= optY + dropdownHeight) {
-                        ConfigManager.updateAndSave(LucidConfig.class, "customGuiScale", options.get(i));
-                        isDropdownOpen = false;
-                        this.init(this.minecraft, this.minecraft.getWindow().getGuiScaledWidth(), this.minecraft.getWindow().getGuiScaledHeight());
+            if (LucidConfig.screenshotUploadEnabled) {
+                if (uploadButton.mouseClicked(scaledX, scaledY, button)) return true;
+
+                if (selectedCard.getUploadState() == ScreenshotCard.UploadState.UPLOADED && selectedCard.getUploadUrl() != null) {
+                    String url = selectedCard.getUploadUrl();
+                    int textX = previewX + 168;
+                    int textY = uploadRowY + 6;
+                    int textWidth = this.font.width(url);
+                    int textHeight = this.font.lineHeight;
+
+                    if (scaledX >= textX && scaledX <= textX + textWidth && scaledY >= textY && scaledY <= textY + textHeight) {
+                        selectedCard.copyUploadLinkToClipboard();
                         return true;
                     }
                 }
             }
-        }
-        if (isDropdownOpen) {
-            isDropdownOpen = false;
+
+            if (closeButton.mouseClicked(scaledX, scaledY, button)) return true;
+
+            if (scaledX < previewX || scaledX > previewX + previewWidth || scaledY < previewY || scaledY > previewY + previewHeight) {
+                selectedCard = null;
+            }
             return true;
         }
 
@@ -283,30 +277,6 @@ public class GalleryScreen extends Screen {
             }
         }
 
-        String currentLabel = LucidConfig.customGuiScale == 0
-                ? Component.translatable("gui.lucidgallery.scale_auto").getString()
-                : Component.translatable("gui.lucidgallery.scale_label", LucidConfig.customGuiScale).getString();
-        boolean btnHovered = mouseX >= dropdownX && mouseX <= dropdownX + dropdownWidth && mouseY >= dropdownY && mouseY <= dropdownY + dropdownHeight;
-
-        guiGraphics.fill(dropdownX, dropdownY, dropdownX + dropdownWidth, dropdownY + dropdownHeight, btnHovered ? 0xFF555555 : 0xFF222222);
-        guiGraphics.drawCenteredString(this.font, currentLabel, dropdownX + dropdownWidth / 2, dropdownY + 4, 0xFFFFFFFF);
-        guiGraphics.renderOutline(dropdownX, dropdownY, dropdownWidth, dropdownHeight, 0xFF000000);
-
-        if (isDropdownOpen) {
-            List<Integer> options = GuiScale.supportedScaleOptions(this.minecraft);
-            for (int i = 0; i < options.size(); i++) {
-                int optY = dropdownY + dropdownHeight + (i * dropdownHeight);
-                boolean optHovered = mouseX >= dropdownX && mouseX <= dropdownX + dropdownWidth && mouseY >= optY && mouseY <= optY + dropdownHeight;
-                String optLabel = options.get(i) == 0
-                        ? Component.translatable("gui.lucidgallery.scale_auto").getString()
-                        : String.valueOf(options.get(i));
-
-                guiGraphics.fill(dropdownX, optY, dropdownX + dropdownWidth, optY + dropdownHeight, optHovered ? 0xFF666666 : 0xFF333333);
-                guiGraphics.drawCenteredString(this.font, optLabel, dropdownX + dropdownWidth / 2, optY + 4, 0xFFFFFFFF);
-                guiGraphics.renderOutline(dropdownX, optY, dropdownWidth, dropdownHeight, 0xFF000000);
-            }
-        }
-
         guiGraphics.pose().popPose();
     }
 
@@ -349,7 +319,7 @@ public class GalleryScreen extends Screen {
         switch (selectedCard.getUploadState()) {
             case UPLOADED -> selectedCard.copyUploadLinkToClipboard();
             case IDLE, ERROR -> selectedCard.startUpload();
-            case UPLOADING -> { /* ignore extra clicks */ }
+            case UPLOADING -> { }
         }
     }
 
@@ -358,11 +328,11 @@ public class GalleryScreen extends Screen {
 
         switch (selectedCard.getUploadState()) {
             case IDLE -> {
-                CatboxUploader.RejectReason reason = CatboxUploader.canUpload();
-                if (reason == CatboxUploader.RejectReason.COOLDOWN) {
+                LucidUploader.RejectReason reason = LucidUploader.canUpload();
+                if (reason == LucidUploader.RejectReason.COOLDOWN) {
                     uploadButton.setMessage(Component.translatable("gui.lucidgallery.upload.button.cooldown"));
                     uploadButton.active = false;
-                } else if (reason == CatboxUploader.RejectReason.BUSY) {
+                } else if (reason == LucidUploader.RejectReason.BUSY) {
                     uploadButton.setMessage(Component.translatable("gui.lucidgallery.upload.button.uploading"));
                     uploadButton.active = false;
                 } else {
@@ -394,5 +364,49 @@ public class GalleryScreen extends Screen {
     public void onClose() {
         TextureLoader.clearCache();
         super.onClose();
+    }
+
+    private class ScaleSlider extends AbstractSliderButton {
+        public ScaleSlider(int x, int y, int width, int height) {
+            super(x, y, width, height, Component.empty(), getInitialValue());
+            this.updateMessage();
+        }
+
+        private static double getInitialValue() {
+            int maxScale = GuiScale.maxSupportedScale(Minecraft.getInstance());
+            int current = Mth.clamp(LucidConfig.customGuiScale, 0, maxScale);
+            return maxScale > 0 ? (double) current / maxScale : 0.0;
+        }
+
+        @Override
+        protected void updateMessage() {
+            int maxScale = GuiScale.maxSupportedScale(Minecraft.getInstance());
+            int current = (int) Math.round(this.value * maxScale);
+            if (current == 0) {
+                this.setMessage(Component.translatable("gui.lucidgallery.scale_auto"));
+            } else {
+                this.setMessage(Component.translatable("gui.lucidgallery.scale_label", current));
+            }
+        }
+
+        @Override
+        protected void applyValue() {
+            this.updateMessage();
+        }
+
+        @Override
+        public void onRelease(double mouseX, double mouseY) {
+            super.onRelease(mouseX, mouseY);
+            int maxScale = GuiScale.maxSupportedScale(Minecraft.getInstance());
+            int current = (int) Math.round(this.value * maxScale);
+
+            this.value = maxScale > 0 ? (double) current / maxScale : 0.0;
+            this.updateMessage();
+
+            if (LucidConfig.customGuiScale != current) {
+                ConfigManager.updateAndSave(LucidConfig.class, "customGuiScale", current);
+                GalleryScreen.this.init(Minecraft.getInstance(), Minecraft.getInstance().getWindow().getGuiScaledWidth(), Minecraft.getInstance().getWindow().getGuiScaledHeight());
+            }
+        }
     }
 }
